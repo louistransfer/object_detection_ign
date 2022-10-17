@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "object-detection-ign"
+version = "0.1.0"
+description = ""
+authors = ["louistransfer <lberto60@gmail.com>"]
+readme = "README.md"
+packages = [{include = "object_detection_ign"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
