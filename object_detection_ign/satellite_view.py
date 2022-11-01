@@ -1,24 +1,35 @@
 import os
+import io
 import pandas as pd
-from owslib.wmts import WebMapTileService, TileMatrixSet
+import requests
+from PIL import Image
+from owslib.wmts import WebMapTileService, TileMatrixSet, TileMatrix
+from owslib import wmts
 from logzero import logger
+from utils import compute_tile_position
+from tqdm import trange
 
 
-WMTS_SERVICE_URL = "https://wxs.ign.fr/satellite/geoportail/wmts"
+# WMTS_SERVICE_URL = "https://wxs.ign.fr/satellite/geoportail/wmts"
+WMTS_SERVICE_URL = "https://wxs.ign.fr/ortho/geoportail/wmts?SERVICE=WMTS"
 CORRESPONDANCE_TABLE_URL = "https://developers.arcgis.com/documentation/mapping-apis-and-services/reference/zoom-levels-and-scale/"
 DATA_PATH = os.path.join("data")
 CORRESPONDANCE_TABLE_PATH = os.path.join(DATA_PATH, "correspondance_table.csv")
 
 
 class SatelliteView:
-    def __init__(self, location):
-        self.latitude = 0
-        self.longitude = 0
-        self.location = location
-        self.adress = None
+    def __init__(self):
+        self.latitude = 0.0
+        self.longitude = 0.0
+        self.zoom_level = 0
+        self.address = None
+        self.image = None
+
+    def show_image(self):
+        self.image.show()
 
 
-class WMTSConnexion:
+class WMTSClient:
     def __init__(
         self, url: str, correspondance_table_path: str, correspondance_table_url: str
     ):
@@ -61,7 +72,103 @@ class WMTSConnexion:
         available_options = correspondance_table.loc[:, "New legend"].to_list()
         return available_options
 
+    def list_available_zoom_options(self):
+        return self.available_options
 
-connexion = WMTSConnexion(
+    def list_available_layers(self):
+        return self.wmts_instance.contents.keys()
+
+    def reverse_geocoding(self, address):
+        """This functions performs an API call with the target address to the OpenStreetMap API.
+        A longitude and a latitude are then returned."""
+
+        target_url = (
+            "https://nominatim.openstreetmap.org/search?q=" + address + "&format=json"
+        )
+
+        target_url = target_url.replace(",", "%2C")
+        target_url = target_url.replace(" ", "+")
+
+        r = requests.get(target_url)
+        found_coordinates = True
+        if r.status_code == 200:
+            try:
+                coordinates = r.json()[0]
+                latitude, longitude = coordinates["lat"], coordinates["lon"]
+
+            except:
+                print(f"Address not found for: {target_url}")
+                latitude, longitude = None, None
+                found_coordinates = False
+
+        else:
+            print(f"Error {r.status_code} ocurred on the request")
+            latitude, longitude, found_coordinates = None, None, False
+        return latitude, longitude, found_coordinates
+
+    def get_concat_image(
+        self, grid_length, grid_width, tile_row, tile_column, layer, zoom_level
+    ):
+        total_width = 256 * grid_width
+        total_height = 256 * grid_length
+        dst = Image.new("RGB", (total_width, total_height))
+        for i, row in enumerate(trange(tile_row - 1, tile_row + 2)):
+            for j, col in enumerate(range(tile_column - 1, tile_column + 2)):
+                request = self.wmts_instance.gettile(
+                    layer=layer,
+                    tilematrixset="PM",
+                    tilematrix=zoom_level,
+                    row=row,
+                    column=col,
+                )
+                temp_img = Image.open(io.BytesIO(request.read()))
+                dst.paste(temp_img, (j * 256, i * 256))
+        return dst
+
+    def create_satellite_view_from_address(
+        self, address, layer, zoom_level, grid_length=3, grid_width=3
+    ):
+        satellite_view = SatelliteView()
+        satellite_view.address = address
+        satellite_view.zoom_level = zoom_level
+        (
+            satellite_view.latitude,
+            satellite_view.longitude,
+            found_coordinates,
+        ) = self.reverse_geocoding(address)
+        tile_row, tile_column = compute_tile_position(
+            self.matrix_set,
+            zoom_level,
+            satellite_view.longitude,
+            satellite_view.latitude,
+        )
+        satellite_view.image = self.get_concat_image(
+            grid_length, grid_width, tile_row, tile_column, layer, zoom_level
+        )
+        return satellite_view
+
+    def create_satellite_view_from_position(
+        self, latitude, longitude, layer, zoom_level, grid_length=3, grid_width=3
+    ):
+        satellite_view = SatelliteView()
+        satellite_view.latitude = latitude
+        satellite_view.longitude = longitude
+        tile_row, tile_column = compute_tile_position(
+            self.matrix_set, zoom_level, longitude, latitude
+        )
+        satellite_view.image = self.get_concat_image(
+            grid_length, grid_width, tile_row, tile_column, layer, zoom_level
+        )
+        return satellite_view
+
+
+client = WMTSClient(
     WMTS_SERVICE_URL, CORRESPONDANCE_TABLE_PATH, CORRESPONDANCE_TABLE_URL
 )
+
+print(client.list_available_zoom_options())
+print(client.list_available_layers())
+satellite_view = client.create_satellite_view_from_address(
+    "127 boulevard Haussmann PARIS", "HR.ORTHOIMAGERY.ORTHOPHOTOS", 15
+)
+satellite_view.show_image()
