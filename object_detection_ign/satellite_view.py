@@ -3,19 +3,10 @@ import io
 import pandas as pd
 import requests
 from PIL import Image
-from owslib.wmts import WebMapTileService, TileMatrixSet, TileMatrix
-from owslib import wmts
+from owslib.wmts import WebMapTileService, TileMatrixSet
 from logzero import logger
-from utils import compute_tile_position
+from object_detection_ign.utils import compute_tile_position
 from tqdm import trange
-
-
-# WMTS_SERVICE_URL = "https://wxs.ign.fr/satellite/geoportail/wmts"
-WMTS_SERVICE_URL = "https://wxs.ign.fr/ortho/geoportail/wmts?SERVICE=WMTS"
-CORRESPONDANCE_TABLE_URL = "https://developers.arcgis.com/documentation/mapping-apis-and-services/reference/zoom-levels-and-scale/"
-DATA_PATH = os.path.join("data")
-CORRESPONDANCE_TABLE_PATH = os.path.join(DATA_PATH, "correspondance_table.csv")
-
 
 class SatelliteView:
     def __init__(self):
@@ -160,15 +151,3 @@ class WMTSClient:
             grid_length, grid_width, tile_row, tile_column, layer, zoom_level
         )
         return satellite_view
-
-
-client = WMTSClient(
-    WMTS_SERVICE_URL, CORRESPONDANCE_TABLE_PATH, CORRESPONDANCE_TABLE_URL
-)
-
-print(client.list_available_zoom_options())
-print(client.list_available_layers())
-satellite_view = client.create_satellite_view_from_address(
-    "127 boulevard Haussmann PARIS", "HR.ORTHOIMAGERY.ORTHOPHOTOS", 15
-)
-satellite_view.show_image()
