@@ -19,6 +19,9 @@ class SatelliteView:
     def show_image(self):
         self.image.show()
 
+    def save_image(self, export_path):
+        self.image.save(export_path, "PNG")
+
 
 class WMTSClient:
     def __init__(

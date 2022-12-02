@@ -13,7 +13,8 @@ client = WMTSClient(
 
 print(client.list_available_zoom_options())
 print(client.list_available_layers())
-satellite_view = client.create_satellite_view_from_address(
-    "Aérodrome de Carpiquet, France", "HR.ORTHOIMAGERY.ORTHOPHOTOS", 15
-)
-satellite_view.show_image()
+# satellite_view = client.create_satellite_view_from_address(
+#     "Carrefour avenue de l'Europe, Venette, France", "HR.ORTHOIMAGERY.ORTHOPHOTOS", 16
+# )
+satellite_view = client.create_satellite_view_from_position(49.001190, 2.577033, "HR.ORTHOIMAGERY.ORTHOPHOTOS", 17)
+satellite_view.save_image("test_img.png")
