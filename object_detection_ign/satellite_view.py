@@ -1,6 +1,7 @@
 import os
 import io
 import pandas as pd
+import numpy as np
 import requests
 from PIL import Image
 from owslib.wmts import WebMapTileService, TileMatrixSet
@@ -19,6 +20,13 @@ class SatelliteView:
 
     def show_image(self):
         self.image.show()
+
+    @property
+    def image_array(self):
+        temp_array = np.array(self.image)
+        array_shape = temp_array.shape
+        temp_array = np.reshape(temp_array, [1, array_shape[0], array_shape[1], 3])
+        return temp_array
 
     def save_image(self, export_path: str):
         self.image.save(export_path, "PNG")
