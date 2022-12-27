@@ -22,6 +22,7 @@ class SatelliteView:
         self.zoom_level = 0
         self.address = None
         self.image: Image.Image = None
+        self.found_coordinates: bool = False
 
     def show_image(self):
         """Shows the image.
@@ -163,11 +164,11 @@ class WMTSClient:
                 coordinates = r.json()[0]
                 latitude, longitude = coordinates["lat"], coordinates["lon"]
             except:
-                print(f"Address not found for: {target_url}")
-                latitude, longitude = None, None
-                found_coordinates = False
+                logger.critical(f"Address not found for: {target_url}")
+                latitude, longitude, found_coordinates = None, None, False
+                
         else:
-            print(f"Error {r.status_code} ocurred on the request")
+            logger.critical(f"Error {r.status_code} ocurred on the request")
             latitude, longitude, found_coordinates = None, None, False
         return latitude, longitude, found_coordinates
 
@@ -232,17 +233,18 @@ class WMTSClient:
         (
             satellite_view.latitude,
             satellite_view.longitude,
-            found_coordinates,
+            satellite_view.found_coordinates,
         ) = self.reverse_geocoding(address)
-        tile_row, tile_column = compute_tile_position(
-            self.matrix_set,
-            zoom_level,
-            satellite_view.longitude,
-            satellite_view.latitude,
-        )
-        satellite_view.image = self.get_concat_image(
-            grid_length, grid_width, tile_row, tile_column, layer, zoom_level
-        )
+        if satellite_view.found_coordinates:
+            tile_row, tile_column = compute_tile_position(
+                self.matrix_set,
+                zoom_level,
+                satellite_view.longitude,
+                satellite_view.latitude,
+            )
+            satellite_view.image = self.get_concat_image(
+                grid_length, grid_width, tile_row, tile_column, layer, zoom_level
+            )
         return satellite_view
 
     def create_satellite_view_from_position(
