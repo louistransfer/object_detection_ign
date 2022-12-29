@@ -1,12 +1,15 @@
 import io
+import picologging as logging
 from starlite import post, State
-from logzero import logger
+
 from starlite.controller import Controller
 from starlite.exceptions import ValidationException
 from object_detection_ign.wmts.satellite_view import SatelliteView
 from object_detection_ign.api.data_objects import SatelliteAddress, SatellitePosition
 from object_detection_ign.detector.inference_helpers import perform_inference
 
+logging.basicConfig()
+logger = logging.getLogger()
 
 class ObjectDetectionController(Controller):
     """Inherits from the Controller class. This object is used to define the routes belonging to the "inference" branch.

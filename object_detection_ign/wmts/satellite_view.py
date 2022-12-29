@@ -6,9 +6,12 @@ import requests
 from typing import Union
 from PIL import Image
 from owslib.wmts import WebMapTileService, TileMatrixSet
-from logzero import logger
+import picologging as logging
 from object_detection_ign.wmts.utils import compute_tile_position
 from tqdm import trange
+
+logging.basicConfig()
+logger = logging.getLogger()
 
 
 class SatelliteView:

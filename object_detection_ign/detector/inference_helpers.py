@@ -1,12 +1,15 @@
 import tensorflow as tf
 import numpy as np
+import picologging as logging
 from PIL import ImageDraw, ImageFont, Image
 from pycoral.utils.edgetpu import list_edge_tpus
-from logzero import logger
+
 from platform import system
 from matplotlib import font_manager
 from object_detection_ign.wmts.satellite_view import SatelliteView
 
+logging.basicConfig()
+logger = logging.getLogger()
 
 def decode_img(
     img_path: str, img_height: int, img_width: int, convert_to_dtype=None

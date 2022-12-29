@@ -6,8 +6,10 @@ from object_detection_ign.api.api_configuration import (
     set_state_on_startup,
     api_initialization,
 )
-from logzero import logger
+import picologging as logging
 
+logging.basicConfig()
+logger = logging.getLogger()
 
 CONFIG_FILE_PATH = os.path.join("config", "api_config.toml")
 
