@@ -7,7 +7,7 @@ from typing import Union
 from PIL import Image
 from owslib.wmts import WebMapTileService, TileMatrixSet
 from logzero import logger
-from object_detection_ign.utils import compute_tile_position
+from object_detection_ign.wmts.utils import compute_tile_position
 from tqdm import trange
 
 

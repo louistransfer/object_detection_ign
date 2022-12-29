@@ -3,9 +3,9 @@ from starlite import post, State
 from logzero import logger
 from starlite.controller import Controller
 from starlite.exceptions import ValidationException
-from object_detection_ign.satellite_view import SatelliteView
+from object_detection_ign.wmts.satellite_view import SatelliteView
 from object_detection_ign.api.data_objects import SatelliteAddress, SatellitePosition
-from object_detection_ign.inference_helpers import perform_inference
+from object_detection_ign.detector.inference_helpers import perform_inference
 
 
 class ObjectDetectionController(Controller):
@@ -69,7 +69,7 @@ class ObjectDetectionController(Controller):
     def detect_objects_location(
         self, data: SatellitePosition, state: State
     ) -> bytearray:
-        """Performs object detection on GPS coordinates (latitude and longitude). 
+        """Performs object detection on GPS coordinates (latitude and longitude).
 
         Args:
             data (SatellitePosition): a SatellitePosition pydantic data object

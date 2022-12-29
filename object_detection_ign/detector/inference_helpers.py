@@ -5,7 +5,7 @@ from pycoral.utils.edgetpu import list_edge_tpus
 from logzero import logger
 from platform import system
 from matplotlib import font_manager
-from object_detection_ign.satellite_view import SatelliteView
+from object_detection_ign.wmts.satellite_view import SatelliteView
 
 
 def decode_img(

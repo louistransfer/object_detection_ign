@@ -4,8 +4,9 @@ from starlite import State
 from requests.exceptions import HTTPError, Timeout, ConnectionError
 from starlite.exceptions import ServiceUnavailableException
 
-from object_detection_ign.inference_helpers import load_inference_model
-from object_detection_ign.satellite_view import WMTSClient
+from object_detection_ign.detector.inference_helpers import load_inference_model
+from object_detection_ign.wmts.satellite_view import WMTSClient
+
 
 def set_state_on_startup(state: State) -> None:
     """Loads a toml config file, reads its parameters and assign them to a Starlite State object.
