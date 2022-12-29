@@ -2,19 +2,37 @@ import io
 from starlite import post, State
 from logzero import logger
 from starlite.controller import Controller
-from starlite.exceptions import (
-    ValidationException
-)
+from starlite.exceptions import ValidationException
 from object_detection_ign.satellite_view import SatelliteView
 from object_detection_ign.api.data_objects import SatelliteAddress, SatellitePosition
 from object_detection_ign.inference_helpers import perform_inference
 
 
 class ObjectDetectionController(Controller):
+    """Inherits from the Controller class. This object is used to define the routes belonging to the "inference" branch.
+    It abstracts the "address" and "location" endpoints of the API.
+
+    Args:
+        Controller (_type_): a Starlite Controller object
+    """
+
     path = "/inference"
 
     @post("/address", media_type="image/png")
     def detect_objects_address(self, data: SatelliteAddress, state: State) -> bytearray:
+        """Performs object detection on a location specified by an address. A SatelliteView object is created through a call to
+        the OpenStreetMaps reverse geocoding API in order to obtain its coordinates. If the address is incorrect, an error is raised.
+
+        Args:
+            data (SatelliteAddress): a SatelliteAddress pydantic data object
+            state (State): a Starlite State object, used to load various parameters (e.g. model filepath location)
+
+        Raises:
+            ValidationException: an error is raised when the address is not found on the OpenStreetMaps reverse geocoding API
+
+        Returns:
+            bytearray: raw array containing the inference image with bounding boxes encoded as a png
+        """
 
         satellite_view: SatelliteView = (
             state.wmts_client.create_satellite_view_from_address(
@@ -51,6 +69,19 @@ class ObjectDetectionController(Controller):
     def detect_objects_location(
         self, data: SatellitePosition, state: State
     ) -> bytearray:
+        """Performs object detection on GPS coordinates (latitude and longitude). 
+
+        Args:
+            data (SatellitePosition): a SatellitePosition pydantic data object
+            state (State): a Starlite State object, used to load various parameters (e.g. model filepath location)
+
+        Raises:
+            ValidationException: an error is raised when the speciifed latitude and longitude are incorrect (invalid values or a location which
+            is not in France)
+
+        Returns:
+            bytearray: raw array containing the inference image with bounding boxes encoded as a png
+        """
         satellite_view: SatelliteView = (
             state.wmts_client.create_satellite_view_from_location(
                 data.latitude, data.longitude, data.layer, data.zoom_level

@@ -8,7 +8,11 @@ from object_detection_ign.inference_helpers import load_inference_model
 from object_detection_ign.satellite_view import WMTSClient
 
 def set_state_on_startup(state: State) -> None:
-    """Startup and shutdown hooks can receive `State` as a keyword arg."""
+    """Loads a toml config file, reads its parameters and assign them to a Starlite State object.
+
+    Args:
+        state (State): a Starlite State object
+    """
     config = toml.load(state.config_file_path)
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = config["model"]["TF_CPP_MIN_LOG_LEVEL"]
 
@@ -25,6 +29,14 @@ def set_state_on_startup(state: State) -> None:
 
 
 def api_initialization(state: State):
+    """Initializes the API on startup by loading the inference model and the WMTS client.
+
+    Args:
+        state (State): a Starlite State object
+
+    Raises:
+        ServiceUnavailableException: errors are raised when the WMTS Server is unreachable
+    """
     if not getattr(state, "inference_model", None):
         (
             state.inference_model,
