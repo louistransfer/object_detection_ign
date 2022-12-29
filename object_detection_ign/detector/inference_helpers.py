@@ -11,6 +11,7 @@ from object_detection_ign.wmts.satellite_view import SatelliteView
 logging.basicConfig()
 logger = logging.getLogger()
 
+
 def decode_img(
     img_path: str, img_height: int, img_width: int, convert_to_dtype=None
 ) -> Image.Image:
