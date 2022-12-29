@@ -1,8 +1,7 @@
-import os
-from pydantic import BaseModel, UUID4, BaseSettings
+from pydantic import BaseModel
 
 
-class SatelliteAdress(BaseModel):
+class SatelliteAddress(BaseModel):
     address: str
     zoom_level: int
     layer: str
