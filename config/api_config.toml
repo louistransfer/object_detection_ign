@@ -1,0 +1,23 @@
+[model]
+MODEL_PATH = "models/tflite_detector_v2/model.tflite"
+TF_CPP_MIN_LOG_LEVEL = "3"
+[model.classes_dict]
+0 = "background"
+1 = "car"
+2 = "truck"
+3 = "pickup"
+4 = "tractor"
+5 = "camping car"
+6 = "boat"
+7 = "motorcycle"
+8 = "bus"
+9 = "van"
+10 = "other"
+11 = "small plane"
+12 = "large plane"
+
+[wmts]
+DATA_PATH = "data"
+WMTS_SERVICE_URL = "https://wxs.ign.fr/ortho/geoportail/wmts?SERVICE=WMTS"
+CORRESPONDANCE_TABLE_URL = "https://developers.arcgis.com/documentation/mapping-apis-and-services/reference/zoom-levels-and-scale/"
+CORRESPONDANCE_TABLE_FILE = "correspondance_table.csv"

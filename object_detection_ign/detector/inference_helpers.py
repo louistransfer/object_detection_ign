@@ -2,15 +2,26 @@ import tensorflow as tf
 import numpy as np
 from PIL import ImageDraw, ImageFont, Image
 from pycoral.utils.edgetpu import list_edge_tpus
-
-# from tensorflow.lite.experimental import load_delegate
 from logzero import logger
 from platform import system
 from matplotlib import font_manager
-from object_detection_ign.satellite_view import SatelliteView
+from object_detection_ign.wmts.satellite_view import SatelliteView
 
 
-def decode_img(img_path, img_height, img_width, convert_to_dtype=None):
+def decode_img(
+    img_path: str, img_height: int, img_width: int, convert_to_dtype=None
+) -> Image.Image:
+    """Loads an image from the given path and resizes it to the desired height and width.
+
+    Args:
+        img_path (str): path to the image file
+        img_height (int): desired image height after resizing
+        img_width (int): desired image width after resizing
+        convert_to_dtype (_type_, optional): dtype to convert the image to. Defaults to None.
+
+    Returns:
+        Image.Image: a PIL image
+    """
     img = tf.io.read_file(img_path)
     img = tf.io.decode_jpeg(img, channels=3)
     img = tf.image.resize(img, [img_height, img_width])
@@ -21,7 +32,21 @@ def decode_img(img_path, img_height, img_width, convert_to_dtype=None):
     return img
 
 
-def filter_predictions(output, classes_dict, detection_threshold=0.1):
+def filter_predictions(
+    output: dict, classes_dict: dict, detection_threshold=0.1
+) -> tuple[np.array, list, np.array]:
+    """Filters the predictions of a tensorflow lite object detection model according to a certain threshold.
+
+    Args:
+        output (dict): output dict of a tensorflow lite model inference.
+        classes_dict (dict): a dictionary containing the label corresponding to each class value.
+        detection_threshold (float, optional): a minimal certainty score required in order to keep a detection in the results. Defaults to 0.1.
+
+    Returns:
+        scores (np.array): filtered scores
+        labels (list): filtered labels
+        bounding_boxes (np.array): filtered bounding boxes
+    """
     labels, bounding_boxes, scores = (
         output["output_2"].astype(int).squeeze(),
         output["output_3"].squeeze(),
@@ -43,7 +68,7 @@ def _draw_bbox(
     image: Image.Image,
     bbox: np.array,
     label: str,
-    score,
+    score: float,
     color="orange",
     use_normalized_coordinates=True,
 ):
@@ -91,8 +116,8 @@ def _draw_bbox(
 
 
 def draw_bounding_boxes_on_image(
-    image,
-    boxes,
+    image: Image.Image,
+    boxes: np.array,
     scores=np.array([]),
     labels=np.array([]),
     color="red",
@@ -124,7 +149,13 @@ def draw_bounding_boxes_on_image(
             # thickness,
         )
 
-def load_coral_tpus():
+
+def load_coral_tpus() -> list:
+    """Loads Coral TPUs if they are available on the current platform. If they are not, the inference defaults to CPU inference.
+
+    Returns:
+        list: a list of hardware delegates to speed up inference.
+    """
     platform_dict = {
         "Windows": "edgetpu.dll",
         "Linux": "libedgetpu.so.1",
@@ -157,18 +188,30 @@ def load_coral_tpus():
         available_delegates = []
     return available_delegates
 
-def load_inference_model(model_path: str):
-    satellite_detector = tf.lite.Interpreter(
+
+def load_inference_model(model_path: str) -> tuple[tf.lite.Interpreter, int, int]:
+    """Loads the inference model as a TFLite Interpreter.
+
+    Args:
+        model_path (str): Filepath of a tensorflow lite object detection model.
+
+    Returns:
+        object_detector (tf.lite.Interpreter): a TF Lite Object Detection model.
+        input_img_width (int): the width of the input inference image.
+        input_img_height (int): the height of the input inference image.
+    """
+
+    object_detector = tf.lite.Interpreter(
         model_path, experimental_delegates=load_coral_tpus()
     )
-    satellite_detector.allocate_tensors()
+    object_detector.allocate_tensors()
 
-    input_img_shape = satellite_detector.get_input_details()[0]["shape_signature"][1:3]
+    input_img_shape = object_detector.get_input_details()[0]["shape_signature"][1:3]
     input_img_width, input_img_height = input_img_shape[0], input_img_shape[1]
     logger.info(
         f"The selected model uses a {(input_img_width, input_img_height)} size for input images."
     )
-    return satellite_detector, input_img_width, input_img_height
+    return object_detector, input_img_width, input_img_height
 
 
 def perform_inference(
@@ -176,7 +219,21 @@ def perform_inference(
     satellite_view: SatelliteView,
     classes_dict: dict,
     detection_threshold=0.1,
-):
+) -> tuple[np.array, list, np.array]:
+    """Detect objects on a given picture, filters them according to a thresholds, draws them on the picture and returns scores,
+    labels and bounding boxes. Note : the image is modified in-place and is not returned by the function.
+
+    Args:
+        satellite_detector (tf.lite.Interpreter): _description_
+        satellite_view (SatelliteView): _description_
+        classes_dict (dict): _description_
+        detection_threshold (float, optional): _description_. Defaults to 0.1.
+
+    Returns:
+        scores (np.array):
+        labels (list):
+        bounding_boxes (np.array):
+    """
     tf_img = tf.constant(satellite_view.image_array, dtype=tf.float32)
     signature = satellite_detector.get_signature_runner()
     output = signature(images=tf_img)
@@ -272,6 +329,3 @@ def perform_inference(
 #             font=font,
 #         )
 #         text_bottom -= text_height - 2 * margin
-
-
-
