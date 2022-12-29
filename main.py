@@ -10,74 +10,42 @@ import io
 # DATA_PATH = os.path.join("data")
 # CORRESPONDANCE_TABLE_PATH = os.path.join(DATA_PATH, "correspondance_table.csv")
 from starlite import Starlite, get, post, State, MediaType
-from starlite.exceptions import HTTPException
+from starlite.exceptions import (
+    HTTPException,
+    ValidationException,
+    ServiceUnavailableException,
+)
 from starlite.status_codes import HTTP_404_NOT_FOUND, HTTP_503_SERVICE_UNAVAILABLE
-from pydantic import BaseModel, UUID4, BaseSettings
+
 from starlite.controller import Controller
 from object_detection_ign.satellite_view import WMTSClient, SatelliteView
 from object_detection_ign.inference_helpers import (
     load_inference_model,
     perform_inference,
 )
+from object_detection_ign.api import SatelliteAdress, SatellitePosition
 from logzero import logger
 from requests.exceptions import HTTPError, Timeout, ConnectionError
 
-# from starlite.types import Partial
-
-# class ObjectDetection(BaseModel):
-#     user_id: int
-#     order: str
-
 CONFIG_FILE_PATH = os.path.join("config", "api_config.toml")
-config = toml.load(CONFIG_FILE_PATH)
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = config["model"]["TF_CPP_MIN_LOG_LEVEL"]
+state = State()
 
 
-class AddressNotFound(HTTPException):
-    """The requested address was not found on OpenStreetMap. Please try another syntax or use the coordinates endpoint."""
+def set_state_on_startup(state: State) -> None:
+    """Startup and shutdown hooks can receive `State` as a keyword arg."""
+    config = toml.load(state.config_file_path)
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = config["model"]["TF_CPP_MIN_LOG_LEVEL"]
 
-    def __init__(
-        self,
-        detail="The requested address was not found on OpenStreetMap. Please try another syntax or use the coordinates endpoint. ",
-    ):
-        super().__init__(detail)
-        self.status_code = HTTP_404_NOT_FOUND
-        self.detail = detail
-
-
-class WMTSUnreachable(HTTPException):
-    """The requested address was not found on OpenStreetMap. Please try another syntax or use the coordinates endpoint."""
-
-    def __init__(
-        self, detail="The WTMS Server is currently unreachable, please try out later."
-    ):
-        super().__init__(detail)
-        self.status_code = HTTP_503_SERVICE_UNAVAILABLE
-        self.detail = detail
-
-class AppSettings(BaseSettings):
-    DATA_PATH: str = config["wmts"]["DATA_PATH"]
-    WMTS_SERVICE_URL: str = config["wmts"]["WMTS_SERVICE_URL"]
-
-    CORRESPONDANCE_TABLE_URL: str = config["wmts"]["CORRESPONDANCE_TABLE_URL"]
-    CORRESPONDANCE_TABLE_FILE: str = os.path.join(
-        DATA_PATH, config["wmts"]["CORRESPONDANCE_TABLE_FILE"]
+    state.DATA_PATH: str = config["wmts"]["DATA_PATH"]
+    state.WMTS_SERVICE_URL: str = config["wmts"]["WMTS_SERVICE_URL"]
+    state.CORRESPONDANCE_TABLE_URL: str = config["wmts"]["CORRESPONDANCE_TABLE_URL"]
+    state.CORRESPONDANCE_TABLE_FILE: str = os.path.join(
+        state.DATA_PATH, config["wmts"]["CORRESPONDANCE_TABLE_FILE"]
     )
-    MODEL_PATH: str = config["model"]["MODEL_PATH"]
-    CLASSES_DICT: dict = {
+    state.MODEL_PATH: str = config["model"]["MODEL_PATH"]
+    state.CLASSES_DICT: dict = {
         int(key): value for key, value in config["model"]["classes_dict"].items()
     }
-
-
-settings = AppSettings()
-
-print(settings.CLASSES_DICT[1])
-
-
-class Satellite(BaseModel):
-    address: str
-    zoom_level: int
-    layer: str
 
 
 def api_initialization(state: State):
@@ -86,29 +54,33 @@ def api_initialization(state: State):
             state.inference_model,
             state.input_img_width,
             state.input_img_height,
-        ) = load_inference_model(settings.MODEL_PATH)
+        ) = load_inference_model(state.MODEL_PATH)
     if not getattr(state, "wmts_server", None):
         try:
             state.wmts_client = WMTSClient(
-                settings.WMTS_SERVICE_URL,
-                settings.CORRESPONDANCE_TABLE_FILE,
-                settings.CORRESPONDANCE_TABLE_URL,
+                state.WMTS_SERVICE_URL,
+                state.CORRESPONDANCE_TABLE_FILE,
+                state.CORRESPONDANCE_TABLE_URL,
             )
         except HTTPError:
-            raise WMTSUnreachable(detail=f"Error {HTTPError.errno} occured.")
+            raise ServiceUnavailableException(
+                detail=f"Error {HTTPError.errno} occured."
+            )
 
         except Timeout:
-            raise WMTSUnreachable
+            raise ServiceUnavailableException(
+                detail="The connection with the WMTS Server timed out."
+            )
 
         except ConnectionError:
-            raise WMTSUnreachable
+            raise ServiceUnavailableException
 
 
 class ObjectDetectionController(Controller):
     path = "/inference"
 
     @post("/address", media_type="image/png")
-    def detect_objects_address(self, data: Satellite, state: State) -> dict[str, str]:
+    def detect_objects_address(self, data: SatelliteAdress, state: State) -> bytearray:
 
         satellite_view: SatelliteView = (
             state.wmts_client.create_satellite_view_from_address(
@@ -123,7 +95,7 @@ class ObjectDetectionController(Controller):
             scores, labels, bounding_boxes = perform_inference(
                 state.inference_model,
                 satellite_view,
-                settings.CLASSES_DICT,
+                state.CLASSES_DICT,
                 detection_threshold=0.1,
             )
 
@@ -137,28 +109,51 @@ class ObjectDetectionController(Controller):
             logger.critical(
                 "The requested address was not found, try to change it slightly or use the coordinates endpoint."
             )
-            raise AddressNotFound
+            raise ValidationException(
+                detail="The requested address was not found in OpenStreetMap, try to change it slightly or use the coordinates endpoint."
+            )
 
-    @post("/location")
-    def detect_objects_location(self) -> dict[str, str]:
-        """Handler function that returns a greeting dictionary."""
-        return {"a": "b"}
+    @post("/location", media_type="image/png")
+    def detect_objects_location(
+        self, data: SatellitePosition, state: State
+    ) -> bytearray:
+        satellite_view: SatelliteView = (
+            state.wmts_client.create_satellite_view_from_location(
+                data.latitude, data.longitude, data.layer, data.zoom_level
+            )
+        )
+
+        if satellite_view.found_coordinates:
+            satellite_view.crop_image_center(
+                state.input_img_width, state.input_img_height
+            )
+            scores, labels, bounding_boxes = perform_inference(
+                state.inference_model,
+                satellite_view,
+                state.CLASSES_DICT,
+                detection_threshold=0.1,
+            )
+
+            logger.info("Inference performed.")
+
+            img_byte_arr = io.BytesIO()
+            satellite_view.image.save(img_byte_arr, format="PNG")
+            img_byte_arr = img_byte_arr.getvalue()
+            return img_byte_arr
+        else:
+            logger.critical(
+                "The requested location was not found, check that the latitude and longitude are correct, or that the position is located in France."
+            )
+            raise ValidationException(
+                detail="The requested location was not found, check that the latitude and longitude are correct, or that the position is located in France."
+            )
 
 
 app = Starlite(
-    route_handlers=[ObjectDetectionController], on_startup=[api_initialization]
+    route_handlers=[ObjectDetectionController],
+    on_startup=[
+        set_state_on_startup,
+        api_initialization,
+    ],
+    initial_state={"config_file_path": CONFIG_FILE_PATH},
 )
-
-
-# client = WMTSClient(
-#     WMTS_SERVICE_URL, CORRESPONDANCE_TABLE_PATH, CORRESPONDANCE_TABLE_URL
-# )
-
-# print(client.list_available_zoom_options())
-# print(client.list_available_layers())
-# # satellite_view = client.create_satellite_view_from_address(
-# #     "Carrefour avenue de l'Europe, Venette, France", "HR.ORTHOIMAGERY.ORTHOPHOTOS", 16
-# # )
-# satellite_view = client.create_satellite_view_from_position(49.001190, 2.577033, "HR.ORTHOIMAGERY.ORTHOPHOTOS", 17)
-
-# satellite_view.save_image("test_img.png")

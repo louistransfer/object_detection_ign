@@ -25,8 +25,7 @@ class SatelliteView:
         self.found_coordinates: bool = False
 
     def show_image(self):
-        """Shows the image.
-        """
+        """Shows the image."""
         self.image.show()
 
     @property
@@ -166,7 +165,7 @@ class WMTSClient:
             except:
                 logger.critical(f"Address not found for: {target_url}")
                 latitude, longitude, found_coordinates = None, None, False
-                
+
         else:
             logger.critical(f"Error {r.status_code} ocurred on the request")
             latitude, longitude, found_coordinates = None, None, False
@@ -247,7 +246,7 @@ class WMTSClient:
             )
         return satellite_view
 
-    def create_satellite_view_from_position(
+    def create_satellite_view_from_location(
         self,
         latitude: float,
         longitude: float,
@@ -274,9 +273,13 @@ class WMTSClient:
         satellite_view = SatelliteView()
         satellite_view.latitude = latitude
         satellite_view.longitude = longitude
-        tile_row, tile_column = compute_tile_position(
-            self.matrix_set, zoom_level, longitude, latitude
-        )
+        try:
+            tile_row, tile_column = compute_tile_position(
+                self.matrix_set, zoom_level, longitude, latitude
+            )
+            satellite_view.found_coordinates = True
+        except:
+            logger.critical("Location not found")
         satellite_view.image = self.get_concat_image(
             grid_length, grid_width, tile_row, tile_column, layer, zoom_level
         )
