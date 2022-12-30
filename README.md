@@ -1,10 +1,29 @@
 # IGN Object Detection
-![IGN logo](assets/images/ign_logo.png?raw=true "Detection example" {width=480px height=480px})
-*Disclaimer: this project is **not** affiliated with the IGN, it merely uses its API.*
-![Detection example](assets/images/detection.png?raw=true "Detection example" {width=270 height=138px})
+<!-- <div class="row">
+  <div class="column">
+    <img src="assets/images/detection.png?raw=true" width=30% height=30%>
+  </div>
+  <div class="column">
+    
+  </div> -->
+<p align="center">
+<img src="assets/images/ign_logo.png?raw=true" width=20% height=20%>
+</p>
+<p align="center">
+  <img src="assets/images/detection.png?raw=true" width=30% height=30%>
+</p>
+
+
+<!-- ![IGN logo](assets/images/ign_logo.png?raw=true "Detection example" {width=480px height=480px}) -->
+
+
+> *Disclaimer: this project is **not** affiliated with the IGN, it merely uses its API.*
+
+<!-- ![Detection example](assets/images/detection.png?raw=true "Detection example" {width=270 height=138px}) -->
+
 
 ## Project
-This project aims to build a fully-fledged object detector using Tensorflow. I built it to :
+This project aims to build a fully-fledged object detector using Tensorflow. It was built to :
 - Improve my computer vision knowledge;
 - Build a modern micro-service using an API;
 - Work on EdgeML hardware : in my case, two Raspberry Pi 4B and a [Coral TPU accelerator](https://coral.ai/products/accelerator/);
