@@ -1,6 +1,6 @@
 import io
 import picologging as logging
-from starlite import post, State
+from starlite import post, get, MediaType, State
 
 from starlite.controller import Controller
 from starlite.exceptions import ValidationException
@@ -115,3 +115,7 @@ class ObjectDetectionController(Controller):
             raise ValidationException(
                 detail="The requested location was not found, check that the latitude and longitude are correct, or that the position is located in France."
             )
+
+@get(path="/health", media_type=MediaType.TEXT)
+def health_check() -> str:
+    return "healthy"
