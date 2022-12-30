@@ -1,5 +1,7 @@
 # IGN Object Detection
-![Detection example](assets/images/detection.png?raw=true "Detection example")
+![IGN logo](assets/images/ign_logo.png?raw=true "Detection example" {width=80% height=80%})
+*Disclaimer: this project is **not** affiliated with the IGN, it merely uses its API.*
+![Detection example](assets/images/detection.png?raw=true "Detection example" {width=60% height=60%})
 
 ## Project
 This project aims to build a fully-fledged object detector using Tensorflow. I built it to :
