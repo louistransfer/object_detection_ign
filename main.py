@@ -1,5 +1,5 @@
 import os
-from starlite import Starlite
+from starlite import Starlite, OpenAPIConfig
 from object_detection_ign.api.routes import ObjectDetectionController, health_check
 
 from object_detection_ign.api.api_configuration import (
@@ -21,4 +21,5 @@ app = Starlite(
         api_initialization,
     ],
     initial_state={"config_file_path": CONFIG_FILE_PATH},
+    openapi_config=OpenAPIConfig(title="Object Detection API", version="1.0.0"),
 )
