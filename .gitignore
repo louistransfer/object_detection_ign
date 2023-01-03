@@ -128,9 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Data & models folders
-data/
-models/
+# Legacy models folders
+models/legacy/
 
 #Pytorch detection helper functions dir if present
 detection/

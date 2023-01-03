@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import picologging as logging
 from PIL import ImageDraw, ImageFont, Image
-from pycoral.utils.edgetpu import list_edge_tpus
+
 
 from platform import system
 from matplotlib import font_manager
@@ -10,6 +10,14 @@ from object_detection_ign.wmts.satellite_view import SatelliteView
 
 logging.basicConfig()
 logger = logging.getLogger()
+
+AVAILABLE_DRIVER = False
+try:
+    from pycoral.utils.edgetpu import list_edge_tpus
+
+    AVAILABLE_DRIVER = True
+except ImportError:
+    logger.warning("Edge TPU driver not found.")
 
 
 def decode_img(
@@ -154,22 +162,22 @@ def draw_bounding_boxes_on_image(
         )
 
 
-def load_coral_tpus() -> list:
+def load_coral_tpus(available_driver=AVAILABLE_DRIVER) -> list:
     """Loads Coral TPUs if they are available on the current platform. If they are not, the inference defaults to CPU inference.
 
     Returns:
         list: a list of hardware delegates to speed up inference.
     """
+
     platform_dict = {
         "Windows": "edgetpu.dll",
         "Linux": "libedgetpu.so.1",
         "Darwin": "libedgetpu.1.dylib",
     }
-    available_tpus = list_edge_tpus()
-    current_system = system()
 
-    if current_system in platform_dict:
-        logger.info("System compatible with the Coral TPU.")
+    current_system = system()
+    if available_driver:
+        available_tpus = list_edge_tpus()
         if len(available_tpus) > 0:
             logger.info(f"Found {len(available_tpus)} existing Coral TPU.")
             available_delegates = []
@@ -183,13 +191,14 @@ def load_coral_tpus() -> list:
             except ValueError as e:
                 logger.critical(f"Error {e} occured. Switching to CPU predictions.")
         else:
-            logger.info("No Coral TPU has been found. Switching to CPU predictions.")
+            logger.warning("No Coral TPU has been found. Switching to CPU predictions.")
             available_delegates = []
     else:
-        logger.info(
+        logger.warning(
             "System is incompatible with the Edge TPU. Switching to CPU predictions."
         )
         available_delegates = []
+
     return available_delegates
 
 

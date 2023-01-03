@@ -47,6 +47,11 @@ def wmts_test_client(wmts_client_config) -> WMTSClient:
         correspondance_table_url=wmts_client_config["correspondance_table_url"],
     )
 
+
 @fixture
 def model_definition():
-    return {"model_path": os.path.join("models", "tflite_detector_v2", "model.tflite"), "input_img_width": 640, "input_img_height": 640}
+    return {
+        "model_path": os.path.join("models", "model.tflite"),
+        "input_img_width": 640,
+        "input_img_height": 640,
+    }

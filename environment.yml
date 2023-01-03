@@ -6,6 +6,9 @@ dependencies:
   - ca-certificates
   - openssl
   - pandas
+  - html5lib 
+  - lxml
+  - beautifulsoup4
   - matplotlib
   - pillow
   - tqdm

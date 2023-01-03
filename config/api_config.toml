@@ -1,5 +1,5 @@
 [model]
-MODEL_PATH = "models/tflite_detector_v2/model.tflite"
+MODEL_PATH = "models/model.tflite"
 TF_CPP_MIN_LOG_LEVEL = "3"
 [model.classes_dict]
 0 = "background"
