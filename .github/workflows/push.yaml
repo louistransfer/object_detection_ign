@@ -25,8 +25,9 @@ jobs:
             pytest
 
       - name: Lint with black
-        run: |
-          black .
+        uses: psf/black@stable
+        with:
+          jupyter: true
 
       - name: Test with pytest
         run: |
