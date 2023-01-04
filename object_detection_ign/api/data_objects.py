@@ -7,6 +7,7 @@ class SatelliteAddress(BaseModel):
     Args:
         BaseModel (_type_): a Starlite BaseModel
     """
+
     address: str
     zoom_level: int
     layer: str
@@ -18,6 +19,7 @@ class SatellitePosition(BaseModel):
     Args:
         BaseModel (_type_): a Starlite BaseModel
     """
+
     longitude: float
     latitude: float
     zoom_level: int

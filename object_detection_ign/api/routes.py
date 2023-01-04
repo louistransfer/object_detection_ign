@@ -11,6 +11,7 @@ from object_detection_ign.detector.inference_helpers import perform_inference
 logging.basicConfig()
 logger = logging.getLogger()
 
+
 class ObjectDetectionController(Controller):
     """Inherits from the Controller class. This object is used to define the routes belonging to the "inference" branch.
     It abstracts the "address" and "location" endpoints of the API.
@@ -115,6 +116,7 @@ class ObjectDetectionController(Controller):
             raise ValidationException(
                 detail="The requested location was not found, check that the latitude and longitude are correct, or that the position is located in France."
             )
+
 
 @get(path="/health", media_type=MediaType.TEXT)
 def health_check() -> str:

@@ -30,7 +30,7 @@ def compute_tile_position(
     """Locates the tile containing the targeted location. It is located on a matrix set, i.e a grid containing multiples tiles
     defined by their row and column. The row and the column are obtained by converting the width and length in meters: this operation
     is performed by multiplicating by 0.00028 (number of meters represented by one pixel) and 256 (number of pixels along the width of the tile).
-    Since the width and the length are equal in terms of pixels (256), only the width is computed. However in the future both may be 
+    Since the width and the length are equal in terms of pixels (256), only the width is computed. However in the future both may be
     computed to accomodate WMTS servers using rectangular tiles.
 
     Args:
