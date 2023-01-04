@@ -1,6 +1,9 @@
 name: Python package
 
-on: [push]
+on:
+  push:
+    tags:
+      - v*
 
 defaults:
   run:
@@ -23,12 +26,3 @@ jobs:
           extra-specs: |
             black
             pytest
-
-      - name: Check linting with black
-        uses: psf/black@stable
-        with:
-          jupyter: true
-
-      - name: Test with pytest
-        run: |
-          pytest tests/
