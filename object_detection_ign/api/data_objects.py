@@ -9,8 +9,8 @@ class SatelliteAddress(BaseModel):
     """
 
     address: str
-    zoom_level: int
-    layer: str
+    zoom_level: int = 19
+    layer: str = "HR.ORTHOIMAGERY.ORTHOPHOTOS"
 
 
 class SatellitePosition(BaseModel):
@@ -22,5 +22,5 @@ class SatellitePosition(BaseModel):
 
     longitude: float
     latitude: float
-    zoom_level: int
-    layer: str
+    zoom_level: int = 19
+    layer: str = "HR.ORTHOIMAGERY.ORTHOPHOTOS"
