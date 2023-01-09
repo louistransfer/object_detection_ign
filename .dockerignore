@@ -1,0 +1,6 @@
+notebooks/
+assets/
+.github/
+tests/
+pytest.ini
+*cache*
