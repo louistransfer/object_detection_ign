@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python>=3.7,<3.10
   - ca-certificates
+  - toml
   - openssl
   - pandas
   - html5lib 
