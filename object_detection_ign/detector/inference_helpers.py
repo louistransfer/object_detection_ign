@@ -5,7 +5,6 @@ from PIL import ImageDraw, ImageFont, Image
 
 
 from platform import system
-from matplotlib import font_manager
 from object_detection_ign.wmts.satellite_view import SatelliteView
 
 logging.basicConfig()
@@ -84,12 +83,8 @@ def _draw_bbox(
     color="orange",
     use_normalized_coordinates=True,
 ):
-    system_fonts = [
-        font
-        for font in font_manager.findSystemFonts(fontpaths=None, fontext="ttf")
-        if "DejaVuSansMono.ttf" in font
-    ]
-    font = ImageFont.truetype(system_fonts[0], 15)
+
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 15)
     ymin, xmin, ymax, xmax = (bbox[i] for i in range(0, 4))
     im_width, im_height = image.size
     if use_normalized_coordinates:

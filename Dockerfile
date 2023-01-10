@@ -4,10 +4,10 @@ USER root
 ENV UVICORN_PORT=8000
 EXPOSE ${UVICORN_PORT}
 # Installs the Edge TPU driver
-RUN apt-get update && apt-get install -y curl gnupg && \ 
+RUN apt-get update && apt-get install -y curl gnupg fontconfig && \ 
     echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \ 
-    apt-get update && apt-get install -y libedgetpu1-std
+    apt-get update && apt-get install -y libedgetpu1-std && fc-cache -fv
 # Installs micromamba, an extremely fast Conda alternative
 RUN micromamba install -y -n base -f /tmp/environment.yml && \
     micromamba clean --all --yes 

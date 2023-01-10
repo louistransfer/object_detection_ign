@@ -9,7 +9,6 @@ dependencies:
   - html5lib 
   - lxml
   - beautifulsoup4
-  - matplotlib
   - pillow
   - tqdm
   - pyproj
@@ -26,4 +25,4 @@ dependencies:
   - pip:
       - --extra-index-url https://google-coral.github.io/py-repo/
       - pycoral~=2.0
-      - tensorflow
+      - tflite-runtime
