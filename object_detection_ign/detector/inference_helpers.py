@@ -1,11 +1,10 @@
-import tensorflow as tf
+import tflite_runtime.interpreter as tflite
 import numpy as np
 import picologging as logging
 from PIL import ImageDraw, ImageFont, Image
 
 
 from platform import system
-from matplotlib import font_manager
 from object_detection_ign.wmts.satellite_view import SatelliteView
 
 logging.basicConfig()
@@ -20,28 +19,28 @@ except ImportError:
     logger.warning("Edge TPU driver not found.")
 
 
-def decode_img(
-    img_path: str, img_height: int, img_width: int, convert_to_dtype=None
-) -> Image.Image:
-    """Loads an image from the given path and resizes it to the desired height and width.
+# def decode_img(
+#     img_path: str, img_height: int, img_width: int, convert_to_dtype=None
+# ) -> Image.Image:
+#     """Loads an image from the given path and resizes it to the desired height and width.
 
-    Args:
-        img_path (str): path to the image file
-        img_height (int): desired image height after resizing
-        img_width (int): desired image width after resizing
-        convert_to_dtype (_type_, optional): dtype to convert the image to. Defaults to None.
+#     Args:
+#         img_path (str): path to the image file
+#         img_height (int): desired image height after resizing
+#         img_width (int): desired image width after resizing
+#         convert_to_dtype (_type_, optional): dtype to convert the image to. Defaults to None.
 
-    Returns:
-        Image.Image: a PIL image
-    """
-    img = tf.io.read_file(img_path)
-    img = tf.io.decode_jpeg(img, channels=3)
-    img = tf.image.resize(img, [img_height, img_width])
-    if convert_to_dtype is not None:
-        img = tf.image.convert_image_dtype(img, dtype=convert_to_dtype, saturate=False)
-    img = tf.reshape(img, [1, img_height, img_width, 3])
-    # Resize the image to the desired size
-    return img
+#     Returns:
+#         Image.Image: a PIL image
+#     """
+#     img = tf.io.read_file(img_path)
+#     img = tf.io.decode_jpeg(img, channels=3)
+#     img = tf.image.resize(img, [img_height, img_width])
+#     if convert_to_dtype is not None:
+#         img = tf.image.convert_image_dtype(img, dtype=convert_to_dtype, saturate=False)
+#     img = tf.reshape(img, [1, img_height, img_width, 3])
+#     # Resize the image to the desired size
+#     return img
 
 
 def filter_predictions(
@@ -84,12 +83,8 @@ def _draw_bbox(
     color="orange",
     use_normalized_coordinates=True,
 ):
-    system_fonts = [
-        font
-        for font in font_manager.findSystemFonts(fontpaths=None, fontext="ttf")
-        if "DejaVuSansMono.ttf" in font
-    ]
-    font = ImageFont.truetype(system_fonts[0], 15)
+
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 15)
     ymin, xmin, ymax, xmax = (bbox[i] for i in range(0, 4))
     im_width, im_height = image.size
     if use_normalized_coordinates:
@@ -184,9 +179,7 @@ def load_coral_tpus(available_driver=AVAILABLE_DRIVER) -> list:
             try:
                 for tpu in available_tpus:
                     available_delegates.append(
-                        tf.lite.experimental.load_delegate(
-                            platform_dict[current_system]
-                        )
+                        tflite.experimental.load_delegate(platform_dict[current_system])
                     )
             except ValueError as e:
                 logger.critical(f"Error {e} occured. Switching to CPU predictions.")
@@ -202,7 +195,7 @@ def load_coral_tpus(available_driver=AVAILABLE_DRIVER) -> list:
     return available_delegates
 
 
-def load_inference_model(model_path: str) -> tuple[tf.lite.Interpreter, int, int]:
+def load_inference_model(model_path: str) -> tuple[tflite.Interpreter, int, int]:
     """Loads the inference model as a TFLite Interpreter.
 
     Args:
@@ -214,7 +207,7 @@ def load_inference_model(model_path: str) -> tuple[tf.lite.Interpreter, int, int
         input_img_height (int): the height of the input inference image.
     """
 
-    object_detector = tf.lite.Interpreter(
+    object_detector = tflite.Interpreter(
         model_path, experimental_delegates=load_coral_tpus()
     )
     object_detector.allocate_tensors()
@@ -228,7 +221,7 @@ def load_inference_model(model_path: str) -> tuple[tf.lite.Interpreter, int, int
 
 
 def perform_inference(
-    satellite_detector: tf.lite.Interpreter,
+    satellite_detector: tflite.Interpreter,
     satellite_view: SatelliteView,
     classes_dict: dict,
     detection_threshold=0.1,
@@ -247,7 +240,7 @@ def perform_inference(
         labels (list):
         bounding_boxes (np.array):
     """
-    tf_img = tf.constant(satellite_view.image_array, dtype=tf.float32)
+    tf_img = satellite_view.image_array.astype("float32")
     signature = satellite_detector.get_signature_runner()
     output = signature(images=tf_img)
     scores, labels, bounding_boxes = filter_predictions(

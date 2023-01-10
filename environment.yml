@@ -4,12 +4,12 @@ channels:
 dependencies:
   - python>=3.7,<3.10
   - ca-certificates
+  - toml
   - openssl
   - pandas
   - html5lib 
   - lxml
   - beautifulsoup4
-  - matplotlib
   - pillow
   - tqdm
   - pyproj
@@ -26,4 +26,4 @@ dependencies:
   - pip:
       - --extra-index-url https://google-coral.github.io/py-repo/
       - pycoral~=2.0
-      - tensorflow
+      - tflite-runtime
